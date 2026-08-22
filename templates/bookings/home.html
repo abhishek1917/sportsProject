@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Book your court{% endblock %}
+
+{% block chrome %}{% endblock %}
+{% block messages %}{% endblock %}
+
+{% block content %}
+<main class="flex min-h-screen flex-col items-center justify-center px-6">
+    <div class="w-full max-w-xl text-center">
+        <p class="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-emerald-700">Stadium courts</p>
+        <h1 class="mb-10 text-5xl font-semibold tracking-tight text-stone-900 sm:text-6xl">Book your court</h1>
+        <form id="sport-search" action="{% url 'bookings:home' %}" method="get" class="relative">
+            <label for="q" class="sr-only">Search tennis or cricket</label>
+            <input
+                id="q"
+                name="q"
+                type="search"
+                value="{{ request.GET.q|default:'' }}"
+                placeholder="Search tennis or cricket..."
+                autocomplete="off"
+                class="w-full rounded-2xl border border-stone-200 bg-white px-6 py-5 pr-16 text-lg shadow-lg shadow-stone-200/70 outline-none transition duration-200 placeholder:text-stone-400 focus:border-emerald-500 focus:shadow-xl focus:shadow-emerald-100 focus:ring-4 focus:ring-emerald-100"
+            >
+            <button type="submit" aria-label="Search" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-emerald-800 p-3 text-white transition hover:bg-emerald-900">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="M20 20l-3 -3"></path>
+                </svg>
+            </button>
+        </form>
+        {% if user.is_authenticated %}
+            <p class="mt-8 text-sm text-stone-500">
+                <a href="{% url 'bookings:book_on_call' %}" class="font-medium text-emerald-800 hover:underline">Book on call</a>
+                instead — we’ll ring you.
+            </p>
+        {% endif %}
+        {% if messages %}
+            <div class="mt-6 space-y-2 text-left">
+                {% for message in messages %}
+                    <p class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</main>
+<script>
+    document.getElementById("sport-search").addEventListener("submit", function (event) {
+        var query = (document.getElementById("q").value || "").trim().toLowerCase();
+        var destination = null;
+        if (query.indexOf("tennis") !== -1 || "tennis".indexOf(query) === 0) {
+            destination = "/tennis/";
+        } else if (query.indexOf("cricket") !== -1 || "cricket".indexOf(query) === 0) {
+            destination = "/cricket/";
+        }
+        if (destination) {
+            event.preventDefault();
+            document.body.style.transition = "opacity 180ms ease";
+            document.body.style.opacity = "0.4";
+            window.location.href = destination;
+        }
+    });
+</script>
+{% endblock %}

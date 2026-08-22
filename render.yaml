@@ -1,0 +1,70 @@
+databases:
+  - name: stadium-db
+    plan: free
+
+services:
+  - type: web
+    name: stadium-booking
+    runtime: python
+    plan: free
+    buildCommand: "bash build.sh"
+    startCommand: "bash start.sh"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stadium-db
+          property: connectionString
+      - key: DATABASE_SSL
+        value: "true"
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: EXOTEL_ACCOUNT_SID
+        sync: false
+      - key: EXOTEL_API_KEY
+        sync: false
+      - key: EXOTEL_API_TOKEN
+        sync: false
+      - key: EXOTEL_FROM_NUMBER
+        value: "08047361459"
+      - key: EXOTEL_SUBDOMAIN
+        value: api.exotel.com
+      - key: EXOTEL_VOICE_APP_ID
+        value: "1323148"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: SARVAM_STT_MODEL
+        value: saaras:v3
+      - key: SARVAM_LANGUAGE_CODE
+        value: unknown
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: MSG91_AUTHKEY
+        sync: false
+      - key: MSG91_SENDER
+        value: STADIUM
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false

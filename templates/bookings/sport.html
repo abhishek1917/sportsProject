@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}{{ sport.name }}{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-5xl px-6 py-10">
+    <div class="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-700 to-lime-800 p-8 text-white shadow-lg sm:p-10">
+        <p class="text-sm uppercase tracking-[0.2em] text-emerald-100">{{ sport.name }}</p>
+        <h1 class="mt-2 text-4xl font-semibold tracking-tight">{{ sport.tagline }}</h1>
+        <p class="mt-4 max-w-2xl text-emerald-50">Maximum {{ max_players }} players per booking / court.</p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'bookings:book_on_call' %}?sport={{ sport.slug }}" class="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
+                Book on call
+            </a>
+        {% else %}
+            <a href="{% url 'accounts:login' %}?next=/book-on-call/?sport={{ sport.slug }}" class="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
+                Log in to book on call
+            </a>
+        {% endif %}
+    </div>
+
+    <section class="mt-8 grid gap-6 md:grid-cols-3">
+        <article class="rounded-2xl border border-stone-200 bg-white p-6">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-stone-500">Court</h2>
+            <p class="mt-2 text-stone-700">{{ sport.court_details }}</p>
+        </article>
+        <article class="rounded-2xl border border-stone-200 bg-white p-6">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-stone-500">Timings</h2>
+            <p class="mt-2 text-stone-700">{{ sport.timings }}</p>
+        </article>
+        <article class="rounded-2xl border border-stone-200 bg-white p-6">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-stone-500">Rules</h2>
+            <p class="mt-2 text-stone-700">{{ sport.rules }}</p>
+        </article>
+    </section>
+
+    <section class="mt-10 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-2xl font-semibold">Book a slot</h2>
+                <p class="mt-1 text-stone-500">Pick 1 hour, or two consecutive hours. Payment is offline at the venue.</p>
+            </div>
+            <form method="get" class="flex items-center gap-3">
+                <label for="date" class="text-sm text-stone-600">Date</label>
+                <input
+                    id="date"
+                    type="date"
+                    name="date"
+                    value="{{ selected_date|date:'Y-m-d' }}"
+                    min="{{ min_date|date:'Y-m-d' }}"
+                    max="{{ max_date|date:'Y-m-d' }}"
+                    onchange="this.form.submit()"
+                    class="rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                >
+            </form>
+        </div>
+
+        {% if has_active %}
+            <p class="mt-6 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                You already have an active booking. Cancel it from
+                <a class="underline" href="{% url 'bookings:my_bookings' %}">My bookings</a>
+                before making another.
+            </p>
+        {% endif %}
+
+        <form method="post" id="booking-form" class="mt-6">
+            {% csrf_token %}
+            <div id="slot-grid" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {% for slot in slots %}
+                    <button
+                        type="button"
+                        class="slot-btn rounded-2xl border px-3 py-4 text-left transition {% if slot.is_booked or slot.has_started %}cursor-not-allowed border-stone-100 bg-stone-100 text-stone-400{% else %}border-stone-200 bg-stone-50 hover:border-emerald-500 hover:bg-emerald-50{% endif %}"
+                        data-id="{{ slot.id }}"
+                        data-start="{{ slot.start_time|time:'H:i' }}"
+                        data-booked="{% if slot.is_booked or slot.has_started %}1{% else %}0{% endif %}"
+                        {% if slot.is_booked or slot.has_started %}disabled{% endif %}
+                    >
+                        <span class="block text-sm font-semibold">{{ slot.start_time|time:"g:i A" }}</span>
+                        <span class="block text-xs text-stone-500">{{ slot.end_time|time:"g:i A" }}</span>
+                        <span class="mt-2 block text-xs font-medium {% if slot.is_booked %}text-stone-400{% elif slot.has_started %}text-stone-400{% else %}text-emerald-700{% endif %}">
+                            {% if slot.is_booked %}Booked{% elif slot.has_started %}Past{% else %}Open{% endif %}
+                        </span>
+                    </button>
+                {% empty %}
+                    <p class="col-span-full text-stone-500">No slots for this date.</p>
+                {% endfor %}
+            </div>
+            <p id="selection-label" class="mt-4 text-sm text-stone-500">Select one slot, or two consecutive slots.</p>
+            <div id="slot-inputs"></div>
+            {% if user.is_authenticated and not has_active %}
+                <button
+                    id="confirm-booking"
+                    type="submit"
+                    disabled
+                    class="mt-6 rounded-2xl bg-emerald-800 px-6 py-3 font-semibold text-white transition enabled:hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-stone-300"
+                >
+                    Confirm booking
+                </button>
+            {% elif user.is_authenticated %}
+                <p class="mt-6 text-sm text-stone-500">Booking is paused until your current slot is finished or cancelled.</p>
+            {% else %}
+                <a href="{% url 'accounts:login' %}?next={{ request.get_full_path }}" class="mt-6 inline-flex rounded-2xl bg-emerald-800 px-6 py-3 font-semibold text-white hover:bg-emerald-900">
+                    Log in to book
+                </a>
+            {% endif %}
+        </form>
+    </section>
+</main>
+<script>
+(function () {
+    var buttons = Array.prototype.slice.call(document.querySelectorAll(".slot-btn"));
+    var inputs = document.getElementById("slot-inputs");
+    var label = document.getElementById("selection-label");
+    var confirmBtn = document.getElementById("confirm-booking");
+    var selected = [];
+
+    function isOpen(btn) {
+        return btn.getAttribute("data-booked") !== "1";
+    }
+
+    function consecutive(a, b) {
+        var order = selected.length ? selected.slice().sort(function (x, y) {
+            return x.getAttribute("data-start").localeCompare(y.getAttribute("data-start"));
+        }) : [a, b];
+        if (order.length !== 2) return false;
+        var first = order[0].getAttribute("data-start").split(":");
+        var second = order[1].getAttribute("data-start").split(":");
+        var firstMinutes = parseInt(first[0], 10) * 60 + parseInt(first[1], 10);
+        var secondMinutes = parseInt(second[0], 10) * 60 + parseInt(second[1], 10);
+        return secondMinutes - firstMinutes === 60;
+    }
+
+    function paint() {
+        buttons.forEach(function (btn) {
+            if (!isOpen(btn)) return;
+            btn.classList.remove("border-emerald-700", "bg-emerald-700", "text-white");
+            btn.classList.add("border-stone-200", "bg-stone-50");
+        });
+        selected.forEach(function (btn) {
+            btn.classList.remove("border-stone-200", "bg-stone-50");
+            btn.classList.add("border-emerald-700", "bg-emerald-700", "text-white");
+        });
+        inputs.innerHTML = "";
+        selected.forEach(function (btn) {
+            var input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "slot_ids";
+            input.value = btn.getAttribute("data-id");
+            inputs.appendChild(input);
+        });
+        if (selected.length === 0) {
+            label.textContent = "Select one slot, or two consecutive slots.";
+        } else if (selected.length === 1) {
+            label.textContent = "1 hour selected. Click the next (or previous) hour to book 2 hours.";
+        } else {
+            label.textContent = "2 consecutive hours selected.";
+        }
+        if (confirmBtn) {
+            confirmBtn.disabled = selected.length === 0;
+        }
+    }
+
+    buttons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            if (!isOpen(btn)) return;
+            var index = selected.indexOf(btn);
+            if (index !== -1) {
+                selected.splice(index, 1);
+                paint();
+                return;
+            }
+            if (selected.length === 0) {
+                selected = [btn];
+            } else if (selected.length === 1 && consecutive(selected[0], btn)) {
+                selected = [selected[0], btn];
+            } else {
+                selected = [btn];
+            }
+            paint();
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+Django>=6.0
+django-tailwind>=4.5.0
+django-crispy-forms>=2.7
+crispy-tailwind>=1.0.3
+python-dotenv>=1.0
+requests>=2.32
+django-browser-reload>=1.21
+cookiecutter>=2.6
+plivo>=4.0
+twilio>=9.0
+google-genai>=1.0
+gunicorn>=23.0
+whitenoise>=6.8
+dj-database-url>=2.3
+psycopg[binary]>=3.2

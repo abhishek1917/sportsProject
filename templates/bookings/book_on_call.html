@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Book on call{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-lg px-6 py-12">
+    <p class="text-sm font-medium uppercase tracking-[0.2em] text-emerald-700">AI agent · free</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Book on call</h1>
+    {% if use_outbound %}
+    <p class="mt-3 text-stone-600">
+        Tap the button and Exotel will call <span class="font-medium text-stone-800">{{ customer_phone }}</span>.
+        Pick up and tell the agent what you want to book.
+    </p>
+    {% else %}
+    <p class="mt-3 text-stone-600">
+        One tap opens your phone dialer to the stadium line. The agent books only after you clearly say yes.
+    </p>
+    {% endif %}
+
+    {% if calling_now %}
+    <div class="mt-6 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+        <p class="font-semibold">Calling {{ customer_phone }}…</p>
+        <p class="mt-2">Answer your phone when it rings. Say sport, date, and time, then say yes to confirm.</p>
+    </div>
+    {% elif pending_session and not use_outbound %}
+    <div class="mt-6 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+        <p class="font-semibold">Ready — calling {{ twilio_number }}</p>
+        {% if pending_session.sport_slug %}
+        <p class="mt-2">Sport selected: {{ pending_session.sport_slug|title }}</p>
+        {% endif %}
+        {% if twilio_number %}
+        <a id="stadium-call-link" href="tel:{{ twilio_number }}" class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-800 px-6 py-3 font-semibold text-white hover:bg-emerald-900">
+            Call {{ twilio_number }} again
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <form method="post" id="book-on-call-form" class="mt-8 space-y-4 rounded-3xl border border-stone-200 bg-white p-6">
+        {% csrf_token %}
+        <label class="text-sm font-medium text-stone-700">Sport (optional)</label>
+        <select name="sport" class="mt-2 w-full rounded-xl border border-stone-300 px-3 py-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100">
+            <option value="" {% if not sport_slug %}selected{% endif %}>I’ll tell the agent on the call</option>
+            <option value="tennis" {% if sport_slug == 'tennis' %}selected{% endif %}>Tennis</option>
+            <option value="cricket" {% if sport_slug == 'cricket' %}selected{% endif %}>Cricket</option>
+        </select>
+
+        {% if use_outbound %}
+        <button type="submit" name="mode" value="outbound" class="w-full rounded-2xl bg-emerald-800 px-6 py-3 font-semibold text-white hover:bg-emerald-900">
+            Call me now
+        </button>
+        {% else %}
+        <button type="submit" name="mode" value="inbound" class="w-full rounded-2xl bg-emerald-800 px-6 py-3 font-semibold text-white hover:bg-emerald-900">
+            Book on call — dial {{ twilio_number|default:"stadium" }}
+        </button>
+        {% endif %}
+        <p id="call-form-error" class="hidden text-sm text-red-700"></p>
+        <p id="call-form-success" class="hidden text-sm text-emerald-800"></p>
+    </form>
+
+    {% if browser_voice_ready %}
+    <div class="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50/60 p-6">
+        <p class="text-sm font-medium uppercase tracking-[0.2em] text-emerald-800">Or talk in browser</p>
+        <p class="mt-2 text-sm text-stone-700">
+            No phone call needed. Uses {% if sarvam_ready %}Sarvam AI{% else %}your microphone{% endif %} for Indian English/Hindi.
+        </p>
+        <div id="browser-agent-panel" class="mt-4 hidden rounded-2xl border border-emerald-200 bg-white p-4 text-sm text-stone-800">
+            <p id="browser-agent-message" class="font-medium text-emerald-900"></p>
+            <p id="browser-agent-status" class="mt-2 text-stone-600"></p>
+        </div>
+        <button type="button" id="browser-talk-btn" class="mt-4 w-full rounded-2xl border border-emerald-800 bg-white px-6 py-3 font-semibold text-emerald-900 hover:bg-emerald-100">
+            Start browser agent
+        </button>
+        <button type="button" id="browser-mic-btn" class="mt-3 hidden w-full rounded-2xl bg-emerald-800 px-6 py-3 font-semibold text-white hover:bg-emerald-900">
+            Tap and speak
+        </button>
+        <p id="browser-voice-error" class="mt-3 hidden text-sm text-red-700"></p>
+    </div>
+    {% endif %}
+
+    <ol class="mt-8 list-decimal space-y-2 pl-5 text-sm text-stone-600">
+        {% if use_outbound %}
+        <li>Tap <span class="font-medium text-stone-800">Call me now</span>.</li>
+        <li>Answer when Exotel calls <span class="font-medium text-stone-800">{{ customer_phone }}</span>.</li>
+        <li>Say sport, date, and time — e.g. “tennis tomorrow at 9”.</li>
+        <li>Say <span class="font-medium text-stone-800">yes</span> when the agent repeats the booking.</li>
+        {% else %}
+        <li>Tap the green button — your dialer opens with <span class="font-medium text-stone-800">{{ twilio_number|default:"the stadium number" }}</span>.</li>
+        <li>Press call on your phone (from {{ customer.phone }}).</li>
+        <li>Say sport, date, and time — e.g. “tennis tomorrow at 9”.</li>
+        <li>Say <span class="font-medium text-stone-800">yes</span> when the agent repeats the booking.</li>
+        {% endif %}
+    </ol>
+
+    {% if missing %}
+        <p class="mt-6 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Not connected yet ({{ missing|join:", " }}). Set these in <code>.env</code> and keep your public URL running.
+        </p>
+    {% elif voice_ready %}
+        <p class="mt-6 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700">
+            {% if voice_provider == "exotel" %}
+            Exotel will call you from <span class="font-medium">{{ stadium_number }}</span>.
+            {% else %}
+            Twilio voice webhook:
+            <code>{{ public_base_url }}/voice/inbound/</code> (POST)
+            {% endif %}
+        </p>
+    {% endif %}
+</main>
+
+{% if auto_dial and twilio_number and not use_outbound %}
+<script>
+  window.location.href = "tel:{{ twilio_number|escapejs }}";
+</script>
+{% endif %}
+
+{% if voice_ready %}
+<script>
+  (function () {
+    var form = document.getElementById("book-on-call-form");
+    if (!form) return;
+    var errorBox = document.getElementById("call-form-error");
+    var successBox = document.getElementById("call-form-success");
+    var useOutbound = {{ use_outbound|yesno:"true,false" }};
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (errorBox) {
+        errorBox.classList.add("hidden");
+        errorBox.textContent = "";
+      }
+      if (successBox) {
+        successBox.classList.add("hidden");
+        successBox.textContent = "";
+      }
+      var formData = new FormData(form);
+      fetch(form.action || window.location.pathname, {
+        method: "POST",
+        body: formData,
+        headers: { "X-Requested-With": "fetch" },
+        credentials: "same-origin",
+      })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            if (!response.ok) throw new Error(data.error || "Could not start the call.");
+            if (useOutbound && data.calling) {
+              if (successBox) {
+                successBox.textContent = "Calling " + data.phone + " now. Please answer your phone.";
+                successBox.classList.remove("hidden");
+              }
+              return;
+            }
+            if (data.tel) {
+              window.location.href = "tel:" + data.tel;
+            }
+          });
+        })
+        .catch(function (error) {
+          if (errorBox) {
+            errorBox.textContent = error.message;
+            errorBox.classList.remove("hidden");
+          }
+        });
+    });
+  })();
+</script>
+{% endif %}
+
+{% if browser_voice_ready %}
+<script>
+  (function () {
+    var startBtn = document.getElementById("browser-talk-btn");
+    var micBtn = document.getElementById("browser-mic-btn");
+    var panel = document.getElementById("browser-agent-panel");
+    var messageBox = document.getElementById("browser-agent-message");
+    var statusBox = document.getElementById("browser-agent-status");
+    var errorBox = document.getElementById("browser-voice-error");
+    var sessionId = null;
+    var recording = false;
+    var mediaRecorder = null;
+    var chunks = [];
+
+    function csrfToken() {
+      var input = document.querySelector("input[name=csrfmiddlewaretoken]");
+      return input ? input.value : "";
+    }
+
+    function showError(message) {
+      if (!errorBox) return;
+      errorBox.textContent = message;
+      errorBox.classList.remove("hidden");
+    }
+
+    function clearError() {
+      if (!errorBox) return;
+      errorBox.textContent = "";
+      errorBox.classList.add("hidden");
+    }
+
+    function showAgent(message, status) {
+      if (panel) panel.classList.remove("hidden");
+      if (messageBox) messageBox.textContent = message || "";
+      if (statusBox) statusBox.textContent = status || "";
+    }
+
+    if (!startBtn) return;
+
+    startBtn.addEventListener("click", function () {
+      clearError();
+      var sport = document.querySelector("select[name=sport]");
+      var formData = new FormData();
+      formData.append("sport", sport ? sport.value : "");
+      fetch("{% url 'bookings:browser_voice_start' %}", {
+        method: "POST",
+        body: formData,
+        headers: { "X-CSRFToken": csrfToken() },
+        credentials: "same-origin",
+      })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            if (!response.ok) throw new Error(data.error || "Could not start browser agent.");
+            sessionId = data.session_id;
+            showAgent(data.message, "Tap the button and speak after the beep.");
+            startBtn.classList.add("hidden");
+            if (micBtn) micBtn.classList.remove("hidden");
+          });
+        })
+        .catch(function (error) {
+          showError(error.message);
+        });
+    });
+
+    if (!micBtn) return;
+
+    micBtn.addEventListener("click", function () {
+      if (!sessionId) return;
+      clearError();
+      if (recording && mediaRecorder && mediaRecorder.state === "recording") {
+        recording = false;
+        micBtn.textContent = "Tap and speak";
+        mediaRecorder.stop();
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showError("Microphone access is not available in this browser.");
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function (stream) {
+          chunks = [];
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = function (event) {
+            if (event.data.size > 0) chunks.push(event.data);
+          };
+          mediaRecorder.onstop = function () {
+            stream.getTracks().forEach(function (track) { track.stop(); });
+            var blob = new Blob(chunks, { type: "audio/webm" });
+            var formData = new FormData();
+            formData.append("audio", blob, "browser.webm");
+            showAgent(messageBox ? messageBox.textContent : "", "Processing…");
+            fetch("/voice/browser/turn/" + sessionId + "/", {
+              method: "POST",
+              body: formData,
+              headers: { "X-CSRFToken": csrfToken() },
+              credentials: "same-origin",
+            })
+              .then(function (response) {
+                return response.json().then(function (data) {
+                  if (!response.ok) throw new Error(data.error || "Could not process speech.");
+                  showAgent(data.message, data.hangup ? "Booking complete." : "Tap and speak again.");
+                  if (data.hangup && micBtn) micBtn.classList.add("hidden");
+                });
+              })
+              .catch(function (error) {
+                showError(error.message);
+              });
+          };
+          recording = true;
+          micBtn.textContent = "Listening… tap to stop";
+          mediaRecorder.start();
+          setTimeout(function () {
+            if (recording && mediaRecorder && mediaRecorder.state === "recording") {
+              recording = false;
+              micBtn.textContent = "Tap and speak";
+              mediaRecorder.stop();
+            }
+          }, 5000);
+        })
+        .catch(function () {
+          showError("Please allow microphone access and try again.");
+        });
+    });
+  })();
+</script>
+{% endif %}
+{% endblock %}
