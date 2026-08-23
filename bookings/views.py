@@ -183,6 +183,34 @@ def book_on_call(request):
     if sport_slug not in {"tennis", "cricket", ""}:
         sport_slug = ""
 
+    auto_call = request.method == "GET" and request.GET.get("auto") == "1" and not request.GET.get("calling")
+    if auto_call:
+        if not voice_is_configured():
+            messages.error(
+                request,
+                "Call agent is not connected yet. Missing: "
+                + ", ".join(missing_voice_settings() or ["voice settings"]),
+            )
+        else:
+            try:
+                session = start_outbound_call(customer=customer, sport_slug=sport_slug)
+            except CallError as exc:
+                messages.error(request, str(exc))
+                if missing_voice_settings():
+                    messages.error(
+                        request,
+                        "Missing settings: " + ", ".join(missing_voice_settings()),
+                    )
+            else:
+                messages.success(
+                    request,
+                    f"Calling {customer.phone} now. Pick up and confirm your slot with the agent.",
+                )
+                suffix = f"?calling={session.pk}"
+                if sport_slug:
+                    suffix += f"&sport={sport_slug}"
+                return redirect(f"{request.path}{suffix}")
+
     if request.method == "POST":
         mode = (request.POST.get("mode") or "outbound").strip()
         try:

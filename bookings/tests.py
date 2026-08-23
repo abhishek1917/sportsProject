@@ -198,6 +198,28 @@ class VoiceAgentTests(TestCase):
         PUBLIC_BASE_URL="https://example.com",
     )
     @patch("bookings.views.start_outbound_call")
+    def test_book_on_call_auto_starts_outbound(self, mock_start):
+        session = CallSession.objects.create(
+            customer=self.customer,
+            sport_slug="tennis",
+            status=CallSession.STATUS_IN_PROGRESS,
+        )
+        mock_start.return_value = session
+        self.client.force_login(self.customer.user)
+        response = self.client.get("/book-on-call/?sport=tennis&auto=1")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, f"/book-on-call/?calling={session.pk}&sport=tennis")
+        mock_start.assert_called_once()
+
+    @override_settings(
+        EXOTEL_ACCOUNT_SID="sid",
+        EXOTEL_API_KEY="key",
+        EXOTEL_API_TOKEN="token",
+        EXOTEL_FROM_NUMBER="08047361459",
+        GEMINI_API_KEY="test-gemini",
+        PUBLIC_BASE_URL="https://example.com",
+    )
+    @patch("bookings.views.start_outbound_call")
     def test_book_on_call_post_starts_outbound(self, mock_start):
         session = CallSession.objects.create(
             customer=self.customer,
