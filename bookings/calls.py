@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 from urllib.parse import urljoin
 
@@ -78,6 +79,12 @@ def exotel_api_base() -> str:
     return subdomain
 
 
+def exotel_outbound_enabled() -> bool:
+    if not exotel_is_configured():
+        return False
+    return os.getenv("EXOTEL_OUTBOUND_ENABLED", "false").lower() in {"1", "true", "yes"}
+
+
 def exotel_inbound_webhook_url() -> str:
     return f"{settings.PUBLIC_BASE_URL.rstrip('/')}/voice/exotel/inbound/"
 
@@ -154,8 +161,30 @@ def fetch_exotel_exophone() -> str:
     return str(first)
 
 
+def _exotel_error_detail(exc: requests.RequestException) -> str:
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        try:
+            payload = exc.response.json()
+            rest = payload.get("RestException") or {}
+            if rest.get("Message"):
+                return str(rest["Message"])
+        except ValueError:
+            pass
+        text = (exc.response.text or "").strip()
+        if text:
+            return text
+    return str(exc)
+
+
 def _friendly_call_error(exc: Exception, *, customer: Customer) -> str:
     message = str(exc).lower()
+    if "kyc" in message and "outbound" in message:
+        stadium = settings.EXOTEL_FROM_NUMBER or "the stadium line"
+        return (
+            "Exotel cannot call you yet — your Exotel account must complete KYC first. "
+            f"Use “Call stadium line” below and dial {stadium} from your registered phone, "
+            "or use the browser agent on this page."
+        )
     if "trial accounts have limited parameter access" in message:
         return (
             "Twilio trial cannot place outbound calls to your server. "
@@ -213,9 +242,7 @@ def _start_exotel_outbound_call(*, customer: Customer, sport_slug: str = "") -> 
     except requests.RequestException as exc:
         session.status = CallSession.STATUS_FAILED
         session.save(update_fields=["status"])
-        detail = exc
-        if isinstance(exc, requests.HTTPError) and exc.response is not None:
-            detail = exc.response.text or exc
+        detail = _exotel_error_detail(exc) if isinstance(exc, requests.HTTPError) else exc
         raise CallError(_friendly_call_error(Exception(detail), customer=customer)) from exc
 
     body = response.json()
@@ -294,6 +321,12 @@ def configure_twilio_inbound_webhook() -> str:
 
 def start_outbound_call(*, customer: Customer, sport_slug: str = "") -> CallSession:
     if voice_provider() == "exotel":
+        if not exotel_outbound_enabled():
+            raise CallError(
+                "Outbound calls are off until Exotel KYC is complete. "
+                f"Use “Call stadium line” and dial {settings.EXOTEL_FROM_NUMBER} "
+                "from your registered phone, or use the browser agent."
+            )
         return _start_exotel_outbound_call(customer=customer, sport_slug=sport_slug)
     if not voice_is_configured():
         raise CallError(

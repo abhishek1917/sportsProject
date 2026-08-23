@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from .calls import (
     CallError,
+    exotel_outbound_enabled,
     latest_pending_session,
     missing_voice_settings,
     queue_inbound_call,
@@ -186,7 +187,7 @@ def book_on_call(request):
     if request.method == "POST":
         mode = (request.POST.get("mode") or "").strip()
         if not mode:
-            mode = "outbound" if voice_provider() == "exotel" else "inbound"
+            mode = "outbound" if voice_provider() == "exotel" and exotel_outbound_enabled() else "inbound"
         try:
             if mode == "inbound":
                 session = queue_inbound_call(customer=customer, sport_slug=sport_slug)
@@ -235,7 +236,8 @@ def book_on_call(request):
     auto_dial = request.GET.get("dial") == "1" and bool(stadium_phone_number())
     calling_now = request.GET.get("calling") == "1" or bool(request.GET.get("calling"))
     stadium = stadium_phone_number()
-    use_outbound = voice_provider() == "exotel"
+    use_outbound = voice_provider() == "exotel" and exotel_outbound_enabled()
+    use_inbound = voice_is_configured() and bool(stadium)
 
     return render(
         request,
@@ -255,6 +257,8 @@ def book_on_call(request):
             "voice_ready": voice_is_configured(),
             "auto_dial": auto_dial,
             "use_outbound": use_outbound,
+            "use_inbound": use_inbound,
+            "exotel_kyc_required": voice_provider() == "exotel" and not exotel_outbound_enabled(),
             "calling_now": calling_now,
             "customer_phone": customer.phone,
             "browser_voice_ready": voice_is_configured(),
