@@ -51,9 +51,9 @@ def main() -> None:
         start = r3.text.find("Not connected yet")
         print(r3.text[start : start + 200])
         sys.exit(2)
-    if "Open dialer" in r3.text or "Call me now" in r3.text:
+    if "Call me now" in r3.text:
         print("BOOK_ON_CALL_READY")
-    if "Dial" in r3.text and "registered phone" in r3.text:
+    if "Exotel will call you from" in r3.text:
         print("EXOTEL_CONFIGURED")
     if phone_required := ("phone" in r3.url):
         print("NEEDS_PHONE")
@@ -74,7 +74,7 @@ def main() -> None:
         if "Not connected yet" in r5.text:
             print("STILL_MISSING_AFTER_PHONE")
             sys.exit(2)
-        if "Open dialer" in r5.text or "Call me now" in r5.text:
+        if "Call me now" in r5.text:
             print("BOOK_ON_CALL_READY_AFTER_PHONE")
 
 

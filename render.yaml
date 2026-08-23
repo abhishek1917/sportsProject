@@ -35,7 +35,7 @@ services:
       - key: EXOTEL_VOICE_APP_ID
         value: "1323148"
       - key: EXOTEL_OUTBOUND_ENABLED
-        value: "false"
+        value: "true"
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
       - key: SARVAM_STT_MODEL

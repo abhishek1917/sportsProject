@@ -9,11 +9,11 @@
         <h1 class="mt-2 text-4xl font-semibold tracking-tight">{{ sport.tagline }}</h1>
         <p class="mt-4 max-w-2xl text-emerald-50">Maximum {{ max_players }} players per booking / court.</p>
         {% if user.is_authenticated %}
-            <a href="{% url 'bookings:book_on_call' %}?sport={{ sport.slug }}&dial=1" class="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
+            <a href="{% url 'bookings:book_on_call' %}?sport={{ sport.slug }}" class="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
                 Book on call
             </a>
         {% else %}
-            <a href="{% url 'accounts:login' %}?next=/book-on-call/%3Fsport={{ sport.slug }}%26dial=1" class="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
+            <a href="{% url 'accounts:login' %}?next=/book-on-call/?sport={{ sport.slug }}" class="mt-6 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">
                 Log in to book on call
             </a>
         {% endif %}

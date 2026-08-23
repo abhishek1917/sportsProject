@@ -182,15 +182,12 @@ class VoiceAgentTests(TestCase):
         GEMINI_API_KEY="test-gemini",
         PUBLIC_BASE_URL="https://example.com",
     )
-    def test_book_on_call_queues_and_opens_dialer(self):
+    def test_book_on_call_shows_call_me_now(self):
         self.client.force_login(self.customer.user)
-        response = self.client.get("/book-on-call/?dial=1")
+        response = self.client.get("/book-on-call/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "tel:+918047361459")
-        self.assertContains(response, "Open dialer")
-        self.assertFalse(b"Call me now" in response.content)
-        session = CallSession.objects.filter(customer=self.customer).latest("pk")
-        self.assertEqual(session.status, CallSession.STATUS_QUEUED)
+        self.assertContains(response, "Call me now")
+        self.assertNotContains(response, "Open dialer")
 
     @override_settings(
         EXOTEL_ACCOUNT_SID="sid",
@@ -200,17 +197,23 @@ class VoiceAgentTests(TestCase):
         GEMINI_API_KEY="test-gemini",
         PUBLIC_BASE_URL="https://example.com",
     )
-    def test_book_on_call_post_returns_tel_json(self):
+    @patch("bookings.views.start_outbound_call")
+    def test_book_on_call_post_starts_outbound(self, mock_start):
+        session = CallSession.objects.create(
+            customer=self.customer,
+            sport_slug="tennis",
+            status=CallSession.STATUS_IN_PROGRESS,
+        )
+        mock_start.return_value = session
         self.client.force_login(self.customer.user)
         response = self.client.post(
             "/book-on-call/",
-            {"mode": "inbound", "sport": "tennis"},
+            {"mode": "outbound", "sport": "tennis"},
             HTTP_X_REQUESTED_WITH="fetch",
         )
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertTrue(payload["ok"])
-        self.assertEqual(payload["tel"], "+918047361459")
-        session = CallSession.objects.get(pk=payload["session_id"])
-        self.assertEqual(session.sport_slug, "tennis")
-        self.assertEqual(session.status, CallSession.STATUS_QUEUED)
+        self.assertTrue(payload["calling"])
+        self.assertEqual(payload["phone"], self.customer.phone)
+        mock_start.assert_called_once()

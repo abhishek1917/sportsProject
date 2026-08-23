@@ -26,7 +26,7 @@ class SignupView(View):
             login(request, user)
             messages.success(
                 request,
-                "Account created. Tap Open dialer on the next page, then call the stadium number.",
+                "Account created. Tap Call me now on the next page to book by phone.",
             )
             return redirect("bookings:book_on_call")
         messages.error(

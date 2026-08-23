@@ -106,7 +106,7 @@ def exotel_api_base() -> str:
 def exotel_outbound_enabled() -> bool:
     if not exotel_is_configured():
         return False
-    return os.getenv("EXOTEL_OUTBOUND_ENABLED", "false").lower() in {"1", "true", "yes"}
+    return os.getenv("EXOTEL_OUTBOUND_ENABLED", "true").lower() in {"1", "true", "yes"}
 
 
 def exotel_inbound_webhook_url() -> str:
@@ -345,12 +345,6 @@ def configure_twilio_inbound_webhook() -> str:
 
 def start_outbound_call(*, customer: Customer, sport_slug: str = "") -> CallSession:
     if voice_provider() == "exotel":
-        if not exotel_outbound_enabled():
-            raise CallError(
-                "Outbound calls are off until Exotel KYC is complete. "
-                f"Use “Call stadium line” and dial {settings.EXOTEL_FROM_NUMBER} "
-                "from your registered phone, or use the browser agent."
-            )
         return _start_exotel_outbound_call(customer=customer, sport_slug=sport_slug)
     if not voice_is_configured():
         raise CallError(

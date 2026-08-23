@@ -30,8 +30,8 @@
         </form>
         {% if user.is_authenticated %}
             <p class="mt-8 text-sm text-stone-500">
-                <a href="{% url 'bookings:book_on_call' %}?dial=1" class="font-medium text-emerald-800 hover:underline">Book on call</a>
-                instead — your dialer opens and you call the stadium line.
+                <a href="{% url 'bookings:book_on_call' %}" class="font-medium text-emerald-800 hover:underline">Book on call</a>
+                instead — we’ll ring you.
             </p>
         {% endif %}
         {% if messages %}
