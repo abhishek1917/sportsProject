@@ -139,6 +139,10 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "bookings:book_on_call"
 LOGOUT_REDIRECT_URL = "bookings:home"
 
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.FlexibleAuthBackend",
+]
+
 INTERNAL_IPS = ["127.0.0.1"]
 
 MSG91_AUTHKEY = os.getenv("MSG91_AUTHKEY", "")

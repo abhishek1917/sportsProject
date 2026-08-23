@@ -84,6 +84,12 @@ class PhoneRequiredForm(PhoneMixin, forms.Form):
 class LoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Username, phone, or email"
+        self.fields["username"].widget.attrs["autocomplete"] = "username"
+        self.error_messages["invalid_login"] = (
+            "That login did not match. Use your username, 10-digit phone, or email. "
+            "Passwords are case-sensitive. Admin (/admin/) only works for staff accounts."
+        )
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.add_input(

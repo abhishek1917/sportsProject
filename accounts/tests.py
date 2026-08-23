@@ -47,3 +47,19 @@ class SignupTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("phone number already exists", response.content.decode().lower())
+
+    def test_login_accepts_phone_and_email(self):
+        user = User.objects.create_user(
+            username="PlayerOne",
+            password="StrongPass2026!",
+            email="player@example.com",
+        )
+        Customer.objects.create(user=user, full_name="Player One", phone="919876543210")
+        client = Client()
+        for ident in ("playerone", "919876543210", "9876543210", "player@example.com"):
+            client.logout()
+            response = client.post(
+                "/accounts/login/",
+                {"username": ident, "password": "StrongPass2026!"},
+            )
+            self.assertEqual(response.status_code, 302, ident)
