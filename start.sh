@@ -3,6 +3,7 @@ set -o errexit
 
 python manage.py migrate --noinput
 python manage.py seed_sports
+python manage.py ensure_deploy_admin || true
 if [ -n "${DJANGO_SUPERUSER_USERNAME:-}" ] && [ -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]; then
   python manage.py createsuperuser --noinput || true
 fi
