@@ -23,6 +23,7 @@ from .calls import (
 from .constants import MAX_PLAYERS_PER_COURT
 from .models import Booking, Customer, Slot, Sport
 from .services import BookingError, create_booking, cancel_booking
+from .sms import mask_phone
 from .slots import ensure_slots_for_date
 
 
@@ -103,7 +104,7 @@ def sport_page(request, slug):
         else:
             messages.success(
                 request,
-                "You're booked. Pay at the venue. A confirmation SMS is on its way.",
+                f"You're booked. A confirmation SMS was sent to {mask_phone(customer.phone)}. Pay at the venue.",
             )
             return redirect("bookings:my_bookings")
         return redirect(f"{request.path}?date={selected.isoformat()}")

@@ -87,6 +87,20 @@ class BookingRulesTests(TestCase):
             customer=self.other, slots=[self.slots[0]], created_via=Booking.VIA_ADMIN
         )
 
+    @patch("bookings.services.send_booking_sms")
+    def test_booking_sends_confirmation_sms(self, mock_sms):
+        booking = create_booking(
+            customer=self.customer, slots=[self.slots[0]], created_via=Booking.VIA_SELF
+        )
+        mock_sms.assert_called_once()
+        phone, text = mock_sms.call_args[0]
+        self.assertEqual(phone, self.customer.phone)
+        self.assertIn("Tennis", text)
+        self.assertIn("confirmed", text.lower())
+        cancel_booking(booking=booking, customer=self.customer)
+        self.assertEqual(mock_sms.call_count, 2)
+        self.assertIn("cancelled", mock_sms.call_args[0][1].lower())
+
     def test_sport_pages_and_search(self):
         Sport.objects.create(
             name="Cricket",

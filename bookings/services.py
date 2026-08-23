@@ -2,9 +2,12 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+import logging
 
 from .models import Booking, Customer, Slot, Sport
 from .sms import send_booking_sms
+
+logger = logging.getLogger(__name__)
 
 
 class BookingError(Exception):
@@ -95,10 +98,17 @@ def create_booking(*, customer: Customer, slots, created_via: str) -> Booking:
 
     sport = locked[0].sport
     times = booking.summary_times()
-    send_booking_sms(
-        customer.phone,
-        f"Booking confirmed: {sport.name} on {times}. Pay at the venue. Max 4 players.",
-    )
+    first_name = (customer.full_name or "there").split()[0]
+    try:
+        send_booking_sms(
+            customer.phone,
+            (
+                f"Hi {first_name}, your {sport.name} court is confirmed for {times}. "
+                "Pay at the venue. Max 4 players."
+            ),
+        )
+    except Exception:
+        logger.exception("Booking SMS failed for %s", customer.phone)
     return booking
 
 
@@ -117,4 +127,15 @@ def cancel_booking(*, booking: Booking, customer: Customer | None = None) -> Boo
         locked_booking.save(update_fields=["status"])
         Slot.objects.filter(pk__in=[s.pk for s in slots]).update(is_booked=False)
 
+    sport = slots[0].sport if slots else None
+    times = booking.summary_times() if hasattr(booking, "summary_times") else ""
+    first_name = (booking.customer.full_name or "there").split()[0]
+    sport_name = sport.name if sport else "court"
+    try:
+        send_booking_sms(
+            booking.customer.phone,
+            f"Hi {first_name}, your {sport_name} booking for {times} is cancelled. The slot is open again.",
+        )
+    except Exception:
+        logger.exception("Cancel SMS failed for %s", booking.customer.phone)
     return locked_booking
