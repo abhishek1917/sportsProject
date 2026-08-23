@@ -86,7 +86,7 @@ def exotel_outbound_answer_url(session_id: int) -> str:
     return f"{settings.PUBLIC_BASE_URL.rstrip('/')}/voice/exotel/outbound/{session_id}/"
 
 
-def warm_public_server(*, timeout: int = 60) -> bool:
+def warm_public_server(*, timeout: int = 15) -> bool:
     base = settings.PUBLIC_BASE_URL.rstrip("/")
     if not base:
         return False
@@ -98,6 +98,18 @@ def warm_public_server(*, timeout: int = 60) -> bool:
         except requests.RequestException:
             continue
     return False
+
+
+def schedule_public_warmup() -> None:
+    import threading
+
+    def _warm() -> None:
+        try:
+            warm_public_server(timeout=10)
+        except Exception:
+            pass
+
+    threading.Thread(target=_warm, daemon=True).start()
 
 
 def exotel_voice_flow_url() -> str:
@@ -170,7 +182,7 @@ def _start_exotel_outbound_call(*, customer: Customer, sport_slug: str = "") -> 
     if not settings.PUBLIC_BASE_URL:
         raise CallError("PUBLIC_BASE_URL is missing.")
 
-    warm_public_server()
+    schedule_public_warmup()
 
     session = CallSession.objects.create(
         customer=customer,

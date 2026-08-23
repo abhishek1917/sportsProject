@@ -58,6 +58,7 @@ if DEBUG:
     INSTALLED_APPS.append("django_browser_reload")
 
 MIDDLEWARE = [
+    "stadium_booking.middleware.HealthCheckMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
