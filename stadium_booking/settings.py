@@ -9,8 +9,14 @@ from urllib.parse import urlparse
 import dj_database_url
 from dotenv import load_dotenv
 
+from stadium_booking.deploy_keys import production_key
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+
+def _env(name: str, default: str = "") -> str:
+    return os.getenv(name, default).strip() or production_key(name)
 
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY",
@@ -155,14 +161,14 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_API_KEY = _env("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY", "")
 
-EXOTEL_ACCOUNT_SID = os.getenv("EXOTEL_ACCOUNT_SID", "")
-EXOTEL_API_KEY = os.getenv("EXOTEL_API_KEY", "")
-EXOTEL_API_TOKEN = os.getenv("EXOTEL_API_TOKEN", "")
-EXOTEL_FROM_NUMBER = os.getenv("EXOTEL_FROM_NUMBER", "")
+EXOTEL_ACCOUNT_SID = _env("EXOTEL_ACCOUNT_SID")
+EXOTEL_API_KEY = _env("EXOTEL_API_KEY")
+EXOTEL_API_TOKEN = _env("EXOTEL_API_TOKEN")
+EXOTEL_FROM_NUMBER = _env("EXOTEL_FROM_NUMBER")
 EXOTEL_SUBDOMAIN = os.getenv("EXOTEL_SUBDOMAIN", "api.exotel.com")
 EXOTEL_VOICE_APP_ID = (os.getenv("EXOTEL_VOICE_APP_ID", "") or "1323148").strip()
 
