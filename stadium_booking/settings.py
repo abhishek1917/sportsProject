@@ -135,7 +135,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
 
 LOGIN_URL = "accounts:login"
-LOGIN_REDIRECT_URL = "bookings:home"
+LOGIN_REDIRECT_URL = "bookings:book_on_call"
 LOGOUT_REDIRECT_URL = "bookings:home"
 
 INTERNAL_IPS = ["127.0.0.1"]

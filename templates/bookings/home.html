@@ -37,7 +37,9 @@
         {% if messages %}
             <div class="mt-6 space-y-2 text-left">
                 {% for message in messages %}
-                    <p class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">{{ message }}</p>
+                    <p class="rounded-xl px-4 py-3 text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-emerald-50 text-emerald-900{% endif %}">
+                        {{ message }}
+                    </p>
                 {% endfor %}
             </div>
         {% endif %}

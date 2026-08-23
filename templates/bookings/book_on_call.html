@@ -108,6 +108,10 @@
     {% endif %}
 </main>
 
+<script>
+  fetch("/health/", { credentials: "same-origin" }).catch(function () {});
+</script>
+
 {% if auto_dial and twilio_number and not use_outbound %}
 <script>
   window.location.href = "tel:{{ twilio_number|escapejs }}";

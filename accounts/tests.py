@@ -21,7 +21,7 @@ class SignupTests(TestCase):
             secure=True,
         )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/")
+        self.assertEqual(response.url, "/book-on-call/")
         self.assertTrue(User.objects.filter(username="newplayer").exists())
         self.assertTrue(Customer.objects.filter(phone="919876543210").exists())
 

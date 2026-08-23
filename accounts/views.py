@@ -16,7 +16,7 @@ class SignupView(View):
 
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect("bookings:home")
+            return redirect("bookings:book_on_call")
         return render(request, self.template_name, {"form": SignupForm()})
 
     def post(self, request):
@@ -24,8 +24,11 @@ class SignupView(View):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, "Account created. You are now logged in.")
-            return redirect("bookings:home")
+            messages.success(
+                request,
+                "Account created. Tap Call me now on the next page to book by phone.",
+            )
+            return redirect("bookings:book_on_call")
         messages.error(
             request,
             "Could not create your account. Please fix the errors below.",

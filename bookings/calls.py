@@ -86,6 +86,20 @@ def exotel_outbound_answer_url(session_id: int) -> str:
     return f"{settings.PUBLIC_BASE_URL.rstrip('/')}/voice/exotel/outbound/{session_id}/"
 
 
+def warm_public_server(*, timeout: int = 60) -> bool:
+    base = settings.PUBLIC_BASE_URL.rstrip("/")
+    if not base:
+        return False
+    for path in ("/health/", "/"):
+        try:
+            response = requests.get(f"{base}{path}", timeout=timeout)
+            if response.status_code < 500:
+                return True
+        except requests.RequestException:
+            continue
+    return False
+
+
 def exotel_voice_flow_url() -> str:
     app_id = (settings.EXOTEL_VOICE_APP_ID or "").strip()
     if not app_id:
@@ -155,6 +169,8 @@ def _start_exotel_outbound_call(*, customer: Customer, sport_slug: str = "") -> 
         raise CallError("Exotel is not fully configured.")
     if not settings.PUBLIC_BASE_URL:
         raise CallError("PUBLIC_BASE_URL is missing.")
+
+    warm_public_server()
 
     session = CallSession.objects.create(
         customer=customer,

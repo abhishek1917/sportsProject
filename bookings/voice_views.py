@@ -67,7 +67,10 @@ def voice_inbound(request):
 @csrf_exempt
 @require_POST
 def voice_answer(request, session_id):
-    session = get_object_or_404(CallSession, pk=session_id)
+    session = get_object_or_404(
+        CallSession.objects.select_related("customer"),
+        pk=session_id,
+    )
     session.plivo_call_uuid = (
         request.POST.get("CallSid")
         or request.POST.get("CallUUID")
@@ -90,7 +93,10 @@ def voice_answer(request, session_id):
 @csrf_exempt
 @require_POST
 def voice_input(request, session_id):
-    session = get_object_or_404(CallSession, pk=session_id)
+    session = get_object_or_404(
+        CallSession.objects.select_related("customer"),
+        pk=session_id,
+    )
     speech = (
         request.POST.get("SpeechResult")
         or request.POST.get("Speech")
@@ -180,7 +186,10 @@ def exotel_record(request, session_id):
     if request.method not in {"GET", "POST"}:
         return exoml_hangup("Sorry, this line is not available.")
 
-    session = get_object_or_404(CallSession, pk=session_id)
+    session = get_object_or_404(
+        CallSession.objects.select_related("customer"),
+        pk=session_id,
+    )
     recording_url = (
         request.GET.get("RecordingUrl")
         or request.POST.get("RecordingUrl")
@@ -237,8 +246,12 @@ def exotel_outbound(request, session_id):
     if request.method not in {"GET", "POST"}:
         return exoml_hangup("Sorry, this line is not available.")
 
-    session = get_object_or_404(CallSession, pk=session_id)
+    session = get_object_or_404(
+        CallSession.objects.select_related("customer"),
+        pk=session_id,
+    )
     call_sid = _exotel_call_sid(request)
+    logger.info("Exotel outbound answer session=%s sid=%s", session_id, call_sid)
     return _begin_exotel_session(session=session, call_sid=call_sid)
 
 

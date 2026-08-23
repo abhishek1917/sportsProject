@@ -7,6 +7,7 @@ from . import voice_views
 app_name = "bookings"
 
 urlpatterns = [
+    path("health/", views.health, name="health"),
     path("", views.home, name="home"),
     path("my-bookings/", views.my_bookings, name="my_bookings"),
     path("my-bookings/<int:booking_id>/cancel/", views.cancel_booking_view, name="cancel_booking"),

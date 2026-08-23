@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.http import JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
@@ -29,6 +30,10 @@ def _customer_or_none(user):
     if not user.is_authenticated:
         return None
     return getattr(user, "customer", None)
+
+
+def health(request):
+    return HttpResponse("ok", content_type="text/plain")
 
 
 def home(request):

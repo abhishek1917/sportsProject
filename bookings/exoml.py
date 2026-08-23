@@ -15,10 +15,11 @@ def say_and_record(session_id: int, text: str) -> HttpResponse:
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say>{spoken}</Say>
-  <Record action="{escape(action)}" method="GET" maxLength="30" playBeep="true" />
+  <Pause length="1"/>
+  <Record action="{escape(action)}" method="POST" maxLength="30" timeout="8" playBeep="true" />
 </Response>
 """
-    return HttpResponse(xml, content_type="text/xml")
+    return HttpResponse(xml, content_type="text/xml; charset=utf-8")
 
 
 def say_and_hangup(text: str) -> HttpResponse:
@@ -29,4 +30,4 @@ def say_and_hangup(text: str) -> HttpResponse:
   <Hangup/>
 </Response>
 """
-    return HttpResponse(xml, content_type="text/xml")
+    return HttpResponse(xml, content_type="text/xml; charset=utf-8")
