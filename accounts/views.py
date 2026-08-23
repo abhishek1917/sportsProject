@@ -6,6 +6,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 
+from attendance.access import staff_home_url_name
 from bookings.models import Customer
 
 from .forms import LoginForm, PhoneRequiredForm, SignupForm
@@ -43,7 +44,7 @@ class CustomerLoginView(LoginView):
 
     def get_success_url(self):
         if hasattr(self.request.user, "facility_manager"):
-            return reverse("attendance:dashboard")
+            return reverse(staff_home_url_name(self.request.user.facility_manager))
         return super().get_success_url()
 
 

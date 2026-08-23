@@ -8,7 +8,7 @@ from .services import BookingError, create_booking, customer_has_active_booking
 
 @admin.register(Sport)
 class SportAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "timings")
+    list_display = ("name", "slug", "invoice_prefix", "timings")
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug")
 

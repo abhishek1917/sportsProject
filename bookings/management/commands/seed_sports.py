@@ -19,6 +19,8 @@ SPORTS = [
             "Pay at the venue before play. Cancel from My Bookings if your plans change. "
             "One active booking per customer at a time."
         ),
+        "invoice_prefix": "TEN",
+        "legal_name": "Tennis Courts Academy",
     },
     {
         "name": "Cricket",
@@ -34,6 +36,8 @@ SPORTS = [
             "Pay at the venue before play. Cancel from My Bookings if your plans change. "
             "One active booking per customer at a time."
         ),
+        "invoice_prefix": "CRI",
+        "legal_name": "Cricket Stadium Academy",
     },
 ]
 

@@ -44,3 +44,5 @@ services:
         value: unknown
       - key: MSG91_SENDER
         value: STADIUM
+      - key: INVOICE_SIGNING_SALT
+        generateValue: true

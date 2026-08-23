@@ -3,6 +3,8 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
+from billing.services import rupees_to_paise
+
 from .models import Student
 
 
@@ -27,27 +29,51 @@ class ManagerLoginForm(AuthenticationForm):
         super().confirm_login_allowed(user)
         if not hasattr(user, "facility_manager"):
             raise forms.ValidationError(
-                "This account is not a facility manager. Use the customer log in page instead.",
+                "This account is not facility staff. Use the customer log in page instead.",
                 code="not_manager",
             )
 
 
 class StudentForm(forms.ModelForm):
+    monthly_fee_rupees = forms.DecimalField(
+        max_digits=9,
+        decimal_places=2,
+        min_value=0,
+        required=False,
+        label="Monthly fee (₹)",
+        help_text="Used when generating this month’s invoice. Walk-in students can be 0.",
+    )
+
     class Meta:
         model = Student
-        fields = ("full_name", "age", "session", "phone", "notes", "is_active")
+        fields = (
+            "full_name",
+            "age",
+            "session",
+            "phone",
+            "guardian_name",
+            "court_label",
+            "membership_tier",
+            "notes",
+            "is_active",
+        )
         labels = {
             "full_name": "Student name",
             "session": "Batch",
             "is_active": "Active student",
+            "court_label": "Court / net",
         }
         help_texts = {
-            "session": "Morning, evening, or night batch for this sport.",
-            "phone": "Optional contact number for parents or the student.",
+            "phone": "10-digit mobile for WhatsApp invoices.",
+            "session": "Morning, evening, or night batch.",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields["monthly_fee_rupees"].initial = (
+                self.instance.monthly_fee_paise / 100
+            )
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.add_input(
@@ -57,3 +83,12 @@ class StudentForm(forms.ModelForm):
                 css_class="mt-2 w-full rounded-xl bg-emerald-800 px-4 py-3 font-semibold text-white hover:bg-emerald-900 sm:w-auto",
             )
         )
+
+    def save(self, commit=True):
+        student = super().save(commit=False)
+        student.monthly_fee_paise = rupees_to_paise(
+            self.cleaned_data.get("monthly_fee_rupees") or 0
+        )
+        if commit:
+            student.save()
+        return student

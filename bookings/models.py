@@ -17,6 +17,11 @@ class Sport(models.Model):
     court_details = models.TextField()
     timings = models.CharField(max_length=200)
     rules = models.TextField()
+    legal_name = models.CharField(max_length=160, blank=True)
+    address = models.TextField(blank=True)
+    gstin = models.CharField(max_length=20, blank=True)
+    upi_vpa = models.CharField(max_length=80, blank=True)
+    invoice_prefix = models.CharField(max_length=8, blank=True)
 
     class Meta:
         ordering = ["name"]

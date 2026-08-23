@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "accounts",
     "bookings",
     "attendance",
+    "billing",
 ]
 
 if DEBUG:
@@ -150,6 +151,7 @@ MSG91_AUTHKEY = os.getenv("MSG91_AUTHKEY", "")
 MSG91_SENDER = os.getenv("MSG91_SENDER", "STADIUM")
 
 INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "")
+INVOICE_SIGNING_SALT = os.getenv("INVOICE_SIGNING_SALT", "invoice-pdf-v1")
 
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 if not PUBLIC_BASE_URL:

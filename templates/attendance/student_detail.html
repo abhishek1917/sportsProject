@@ -14,13 +14,20 @@
                     <p class="mt-2 text-sm font-medium text-amber-800">Inactive</p>
                 {% endif %}
             </div>
+            {% if can_manage_students %}
             <a href="{% url 'attendance:student_edit' student.pk %}" class="rounded-full bg-emerald-800 px-4 py-2 text-sm font-semibold text-white">
                 Edit profile
             </a>
+            {% endif %}
         </div>
         {% if student.notes %}
             <p class="mt-4 text-stone-700">{{ student.notes }}</p>
         {% endif %}
+        <p class="mt-3 text-sm text-stone-500">
+            {{ student.get_membership_tier_display }}
+            {% if student.court_label %} · {{ student.court_label }}{% endif %}
+            {% if student.monthly_fee_paise %} · ₹{{ student.monthly_fee_rupees|floatformat:0 }}/mo{% endif %}
+        </p>
         <dl class="mt-6 grid grid-cols-3 gap-3 text-center">
             <div class="rounded-2xl bg-stone-50 p-4">
                 <dt class="text-xs uppercase text-stone-500">Marked days</dt>
@@ -36,6 +43,27 @@
             </div>
         </dl>
     </div>
+
+    {% if can_bill %}
+    <section class="mt-8">
+        <h2 class="text-lg font-semibold">Invoices</h2>
+        {% if invoices %}
+        <ul class="mt-3 divide-y divide-stone-200 rounded-2xl border border-stone-200 bg-white">
+            {% for invoice in invoices %}
+            <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                <span>{{ invoice.number }} · {{ invoice.get_status_display }} · ₹{{ invoice.total_rupees|floatformat:0 }}</span>
+                <span class="flex gap-3">
+                    <a class="font-medium text-emerald-800" href="{% url 'billing:invoice_pdf' invoice.pk %}">PDF</a>
+                    <a class="font-medium text-emerald-800" href="{% url 'billing:whatsapp' invoice.pk %}">WhatsApp</a>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="mt-3 text-sm text-stone-500">No invoices yet. Generate the month from Billing.</p>
+        {% endif %}
+    </section>
+    {% endif %}
 
     <section class="mt-8">
         <h2 class="text-lg font-semibold">Attendance history</h2>

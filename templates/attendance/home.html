@@ -1,0 +1,80 @@
+{% extends "attendance/manage_base.html" %}
+
+{% block manage_title %}{{ sport.name }} overview{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-5xl px-6 py-10">
+    <section class="overflow-hidden rounded-3xl bg-gradient-to-br {{ theme.hero }} p-8 text-white sm:p-10">
+        <p class="text-sm uppercase tracking-[0.2em] text-white/80">Owner dashboard</p>
+        <h1 class="mt-2 text-4xl font-semibold tracking-tight">{{ sport.name }}</h1>
+        <p class="mt-3 text-white/85">Academy, attendance, dues, and court occupancy for this venue.</p>
+    </section>
+
+    <section class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <article class="rounded-2xl border border-stone-200 bg-white p-5">
+            <p class="text-sm text-stone-500">Active students</p>
+            <p class="mt-2 text-3xl font-semibold">{{ student_total }}</p>
+        </article>
+        <article class="rounded-2xl border border-stone-200 bg-white p-5">
+            <p class="text-sm text-stone-500">Today’s roll marked</p>
+            <p class="mt-2 text-3xl font-semibold">{{ roll_pct }}%</p>
+            <p class="mt-1 text-xs text-stone-400">{{ marked_today }} of {{ student_total }}</p>
+        </article>
+        <a href="{% url 'billing:invoice_list' %}?status=open" class="rounded-2xl border border-stone-200 bg-white p-5 hover:border-emerald-300">
+            <p class="text-sm text-stone-500">Unpaid invoices</p>
+            <p class="mt-2 text-3xl font-semibold">₹{{ unpaid_rupees|floatformat:0 }}</p>
+            <p class="mt-1 text-xs text-stone-400">Open draft, sent, pending, and unpaid</p>
+        </a>
+        <article class="rounded-2xl border border-stone-200 bg-white p-5">
+            <p class="text-sm text-stone-500">Slot utilization (14 days)</p>
+            <p class="mt-2 text-3xl font-semibold">{{ util_pct }}%</p>
+            <p class="mt-1 text-xs text-stone-400">{{ slot_booked }} booked / {{ slot_total }} open hours</p>
+        </article>
+    </section>
+
+    <section class="mt-8 grid gap-6 md:grid-cols-3">
+        {% for section in sections %}
+        <a href="{% url 'attendance:section' section.key %}"
+           class="rounded-2xl border border-stone-200 bg-white p-6 hover:border-emerald-300">
+            <p class="text-sm font-semibold uppercase tracking-wide text-stone-500">{{ section.label }}</p>
+            <p class="mt-2 text-2xl font-semibold">{{ section.total }}</p>
+            <p class="mt-2 text-sm text-stone-500">Present {{ section.present }} · Absent {{ section.absent }} · Pending {{ section.pending }}</p>
+        </a>
+        {% endfor %}
+    </section>
+
+    <section class="mt-10 grid gap-8 lg:grid-cols-2">
+        <div>
+            <h2 class="text-lg font-semibold">Open dues</h2>
+            {% if open_invoices %}
+            <ul class="mt-3 divide-y divide-stone-200 rounded-2xl border border-stone-200 bg-white">
+                {% for invoice in open_invoices %}
+                <li class="flex items-center justify-between px-4 py-3 text-sm">
+                    <span>{{ invoice.student.full_name }} · {{ invoice.number }}</span>
+                    <span>₹{{ invoice.total_rupees|floatformat:0 }} · {{ invoice.get_status_display }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="mt-3 text-sm text-stone-500">No open invoices. Generate this month from Billing.</p>
+            {% endif %}
+        </div>
+        <div>
+            <h2 class="text-lg font-semibold">Coaches today</h2>
+            {% if coach_rows %}
+            <ul class="mt-3 divide-y divide-stone-200 rounded-2xl border border-stone-200 bg-white">
+                {% for row in coach_rows %}
+                <li class="flex items-center justify-between px-4 py-3 text-sm">
+                    <span>{{ row.coach.label }}</span>
+                    <span>{{ row.checkins }} check-in{{ row.checkins|pluralize }} / {{ row.assigned }} assignment{{ row.assigned|pluralize }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="mt-3 text-sm text-stone-500">No coaches linked to this venue yet.</p>
+            {% endif %}
+            <p class="mt-3"><a class="text-sm font-medium text-emerald-800" href="{% url 'attendance:staff' %}">Staff board</a></p>
+        </div>
+    </section>
+</main>
+{% endblock %}

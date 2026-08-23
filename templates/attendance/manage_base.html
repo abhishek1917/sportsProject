@@ -5,17 +5,42 @@
 {% block chrome %}
 <header class="{% if sport.slug == 'cricket' %}bg-teal-950 text-teal-50{% else %}bg-emerald-950 text-emerald-50{% endif %}">
     <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <a href="{% url 'attendance:dashboard' %}" class="text-sm font-semibold tracking-wide">
+        <a href="{% if manager.is_owner %}{% url 'attendance:home' %}{% else %}{% url 'attendance:dashboard' %}{% endif %}" class="text-sm font-semibold tracking-wide">
             {{ sport.name }} academy
         </a>
         <nav class="flex flex-wrap items-center gap-4 text-sm">
+            {% if manager.is_owner %}
+                <a href="{% url 'attendance:home' %}" class="hover:underline">Home</a>
+            {% endif %}
+            <a href="{% url 'attendance:dashboard' %}" class="hover:underline">Attendance</a>
+            {% if can_bill %}
+                <a href="{% url 'billing:invoice_list' %}" class="hover:underline">Billing</a>
+                <a href="{% url 'attendance:staff' %}" class="hover:underline">Staff</a>
+            {% endif %}
+            {% if can_manage_students %}
+                <a href="{% url 'attendance:student_create' %}" class="hover:underline">Add student</a>
+            {% endif %}
             <span class="opacity-80">{{ manager.label }} · {{ manager.get_role_display }}</span>
-            <a href="{% url 'attendance:student_create' %}" class="hover:underline">Add student</a>
             <form method="post" action="{% url 'attendance:logout' %}">
                 {% csrf_token %}
                 <button type="submit" class="hover:underline">Log out</button>
             </form>
         </nav>
     </div>
+    {% if manager.is_owner and managed_venues|length > 1 %}
+    <div class="mx-auto flex max-w-5xl flex-wrap gap-2 px-6 pb-4">
+        {% for venue in managed_venues %}
+            <form method="post" action="{% url 'attendance:switch_venue' %}">
+                {% csrf_token %}
+                <input type="hidden" name="venue_id" value="{{ venue.pk }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit"
+                    class="rounded-full px-3 py-1 text-xs font-semibold {% if venue.pk == sport.pk %}bg-white text-stone-900{% else %}bg-white/15 hover:bg-white/25{% endif %}">
+                    {{ venue.name }}
+                </button>
+            </form>
+        {% endfor %}
+    </div>
+    {% endif %}
 </header>
 {% endblock %}
