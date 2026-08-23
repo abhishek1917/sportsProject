@@ -49,6 +49,30 @@ def stadium_phone_number() -> str:
     return settings.TWILIO_FROM_NUMBER
 
 
+def stadium_dial_number() -> str:
+    """E.164-style number for tel: links (no tel: prefix)."""
+    raw = (stadium_phone_number() or "").strip()
+    if not raw:
+        return ""
+    digits = "".join(ch for ch in raw if ch.isdigit())
+    if not digits:
+        return ""
+    if raw.startswith("+"):
+        return f"+{digits}"
+    if digits.startswith("0") and len(digits) >= 10:
+        return f"+91{digits[1:]}"
+    if len(digits) == 10:
+        return f"+91{digits}"
+    if digits.startswith("91"):
+        return f"+{digits}"
+    return f"+{digits}"
+
+
+def stadium_tel_href() -> str:
+    number = stadium_dial_number()
+    return f"tel:{number}" if number else ""
+
+
 def voice_is_configured() -> bool:
     provider = voice_provider()
     if provider == "exotel":

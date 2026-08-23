@@ -27,7 +27,7 @@ class SignupForm(PhoneMixin, UserCreationForm):
     phone = forms.CharField(
         max_length=15,
         label="Phone number",
-        help_text="Required. We call this number for Book on call, and send SMS confirmations.",
+        help_text="Required. Call the stadium line from this number for Book on call. We also send SMS confirmations here.",
     )
 
     class Meta:
@@ -64,7 +64,7 @@ class PhoneRequiredForm(PhoneMixin, forms.Form):
     phone = forms.CharField(
         max_length=15,
         label="Phone number",
-        help_text="Required so the AI agent can call you.",
+        help_text="Required. Call the stadium line from this number so the agent can find your account.",
     )
 
     def __init__(self, *args, user=None, **kwargs):

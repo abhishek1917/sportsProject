@@ -12,11 +12,12 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from .calls import (
     CallError,
-    exotel_outbound_enabled,
     latest_pending_session,
     missing_voice_settings,
     queue_inbound_call,
+    stadium_dial_number,
     stadium_phone_number,
+    stadium_tel_href,
     start_outbound_call,
     voice_is_configured,
     voice_provider,
@@ -168,7 +169,7 @@ def cancel_booking_view(request, booking_id):
 def _require_customer_phone(request):
     customer = _customer_or_none(request.user)
     if not customer or not customer.phone:
-        messages.info(request, "Add your phone number first. The agent will call that number.")
+        messages.info(request, "Add your phone number first. Call the stadium line from that number.")
         return None
     return customer
 
@@ -185,14 +186,13 @@ def book_on_call(request):
         sport_slug = ""
 
     if request.method == "POST":
-        mode = (request.POST.get("mode") or "").strip()
-        if not mode:
-            mode = "outbound" if voice_provider() == "exotel" and exotel_outbound_enabled() else "inbound"
+        mode = (request.POST.get("mode") or "inbound").strip()
         try:
-            if mode == "inbound":
-                session = queue_inbound_call(customer=customer, sport_slug=sport_slug)
-            else:
+            if mode == "outbound":
                 session = start_outbound_call(customer=customer, sport_slug=sport_slug)
+            else:
+                session = queue_inbound_call(customer=customer, sport_slug=sport_slug)
+                mode = "inbound"
         except CallError as exc:
             if request.headers.get("X-Requested-With") == "fetch":
                 return JsonResponse({"ok": False, "error": str(exc)}, status=400)
@@ -204,17 +204,18 @@ def book_on_call(request):
                 )
         else:
             if mode == "inbound":
+                dial = stadium_dial_number()
                 if request.headers.get("X-Requested-With") == "fetch":
                     return JsonResponse(
                         {
                             "ok": True,
-                            "tel": stadium_phone_number(),
+                            "tel": dial,
                             "session_id": session.pk,
                         }
                     )
                 messages.success(
                     request,
-                    f"Opening dialer for {stadium_phone_number()}. Say yes to confirm your booking.",
+                    f"Opening dialer for {dial}. Call from {customer.phone} and say yes to confirm.",
                 )
                 return redirect(f"{request.path}?ready={session.pk}&dial=1")
             if request.headers.get("X-Requested-With") == "fetch":
@@ -232,12 +233,18 @@ def book_on_call(request):
             )
             return redirect(f"{request.path}?calling={session.pk}")
 
-    pending_session = latest_pending_session(customer) if voice_is_configured() else None
-    auto_dial = request.GET.get("dial") == "1" and bool(stadium_phone_number())
-    calling_now = request.GET.get("calling") == "1" or bool(request.GET.get("calling"))
     stadium = stadium_phone_number()
-    use_outbound = voice_provider() == "exotel" and exotel_outbound_enabled()
-    use_inbound = voice_is_configured() and bool(stadium)
+    dial_number = stadium_dial_number()
+    auto_dial = False
+    if request.GET.get("dial") == "1" and voice_is_configured() and dial_number:
+        try:
+            queue_inbound_call(customer=customer, sport_slug=sport_slug)
+            auto_dial = True
+        except CallError:
+            auto_dial = False
+
+    pending_session = latest_pending_session(customer) if voice_is_configured() else None
+    use_inbound = voice_is_configured() and bool(dial_number)
 
     return render(
         request,
@@ -248,6 +255,8 @@ def book_on_call(request):
             "missing": missing_voice_settings(),
             "twilio_number": stadium,
             "stadium_number": stadium,
+            "stadium_dial_number": dial_number,
+            "stadium_tel_href": stadium_tel_href(),
             "voice_provider": voice_provider(),
             "public_base_url": settings.PUBLIC_BASE_URL.rstrip("/"),
             "exotel_webhook_url": f"{settings.PUBLIC_BASE_URL.rstrip('/')}/voice/exotel/inbound/"
@@ -256,10 +265,9 @@ def book_on_call(request):
             "pending_session": pending_session,
             "voice_ready": voice_is_configured(),
             "auto_dial": auto_dial,
-            "use_outbound": use_outbound,
+            "use_outbound": False,
             "use_inbound": use_inbound,
-            "exotel_kyc_required": voice_provider() == "exotel" and not exotel_outbound_enabled(),
-            "calling_now": calling_now,
+            "calling_now": False,
             "customer_phone": customer.phone,
             "browser_voice_ready": voice_is_configured(),
             "sarvam_ready": bool(settings.SARVAM_API_KEY),

@@ -7,7 +7,7 @@ from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from bookings.agent import _run_tool
-from bookings.calls import customer_from_phone, queue_inbound_call
+from bookings.calls import customer_from_phone, queue_inbound_call, stadium_dial_number
 from bookings.models import Booking, CallSession, Customer, Slot, Sport
 from bookings.services import BookingError, cancel_booking, create_booking
 from bookings.slots import ensure_slots_for_date
@@ -169,3 +169,48 @@ class VoiceAgentTests(TestCase):
         self.assertEqual(session.status, CallSession.STATUS_IN_PROGRESS)
         self.assertEqual(session.sport_slug, "tennis")
         mock_reply.assert_called_once()
+
+    def test_stadium_dial_number_from_exophone(self):
+        with override_settings(EXOTEL_FROM_NUMBER="08047361459", TWILIO_FROM_NUMBER=""):
+            self.assertEqual(stadium_dial_number(), "+918047361459")
+
+    @override_settings(
+        EXOTEL_ACCOUNT_SID="sid",
+        EXOTEL_API_KEY="key",
+        EXOTEL_API_TOKEN="token",
+        EXOTEL_FROM_NUMBER="08047361459",
+        GEMINI_API_KEY="test-gemini",
+        PUBLIC_BASE_URL="https://example.com",
+    )
+    def test_book_on_call_queues_and_opens_dialer(self):
+        self.client.force_login(self.customer.user)
+        response = self.client.get("/book-on-call/?dial=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "tel:+918047361459")
+        self.assertContains(response, "Open dialer")
+        self.assertFalse(b"Call me now" in response.content)
+        session = CallSession.objects.filter(customer=self.customer).latest("pk")
+        self.assertEqual(session.status, CallSession.STATUS_QUEUED)
+
+    @override_settings(
+        EXOTEL_ACCOUNT_SID="sid",
+        EXOTEL_API_KEY="key",
+        EXOTEL_API_TOKEN="token",
+        EXOTEL_FROM_NUMBER="08047361459",
+        GEMINI_API_KEY="test-gemini",
+        PUBLIC_BASE_URL="https://example.com",
+    )
+    def test_book_on_call_post_returns_tel_json(self):
+        self.client.force_login(self.customer.user)
+        response = self.client.post(
+            "/book-on-call/",
+            {"mode": "inbound", "sport": "tennis"},
+            HTTP_X_REQUESTED_WITH="fetch",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["tel"], "+918047361459")
+        session = CallSession.objects.get(pk=payload["session_id"])
+        self.assertEqual(session.sport_slug, "tennis")
+        self.assertEqual(session.status, CallSession.STATUS_QUEUED)
