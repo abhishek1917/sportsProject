@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Facility login{% endblock %}
+
+{% block chrome %}
+<header class="border-b border-stone-200/80 bg-white/80 backdrop-blur">
+    <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+        <span class="text-sm font-semibold tracking-wide text-emerald-800">Facility attendance</span>
+        <a href="{% url 'accounts:login' %}" class="text-sm text-stone-600 hover:text-stone-900">Customer log in</a>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-md px-6 py-16">
+    <p class="text-sm font-medium uppercase tracking-[0.2em] text-emerald-700">Staff only</p>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Facility login</h1>
+    <p class="mt-2 text-stone-500">
+        Owners and managers sign in here. Your panel is locked to one sport — tennis staff only see tennis students.
+    </p>
+    <div class="mt-8 rounded-2xl border border-stone-200 bg-white p-6">
+        {% crispy form %}
+    </div>
+</main>
+{% endblock %}

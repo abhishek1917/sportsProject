@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "crispy_tailwind",
     "accounts",
     "bookings",
+    "attendance",
 ]
 
 if DEBUG:

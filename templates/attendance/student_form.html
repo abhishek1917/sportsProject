@@ -1,0 +1,17 @@
+{% extends "attendance/manage_base.html" %}
+{% load crispy_forms_tags %}
+
+{% block manage_title %}{% if student %}Edit {{ student.full_name }}{% else %}New student{% endif %}{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-lg px-6 py-10">
+    <p class="text-sm uppercase tracking-[0.2em] text-stone-500">{{ sport.name }}</p>
+    <h1 class="mt-1 text-3xl font-semibold">{% if student %}Edit profile{% else %}Create student profile{% endif %}</h1>
+    <p class="mt-2 text-stone-500">
+        Profiles are created by the owner or a logged-in manager. This record stays in {{ sport.name }} only.
+    </p>
+    <div class="mt-8 rounded-2xl border border-stone-200 bg-white p-6">
+        {% crispy form %}
+    </div>
+</main>
+{% endblock %}

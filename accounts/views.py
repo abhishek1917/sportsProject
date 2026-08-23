@@ -3,7 +3,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views import View
 
 from bookings.models import Customer
@@ -40,6 +40,11 @@ class CustomerLoginView(LoginView):
     template_name = "accounts/login.html"
     authentication_form = LoginForm
     redirect_authenticated_user = True
+
+    def get_success_url(self):
+        if hasattr(self.request.user, "facility_manager"):
+            return reverse("attendance:dashboard")
+        return super().get_success_url()
 
 
 class CustomerLogoutView(LogoutView):

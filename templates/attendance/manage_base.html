@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}{% block manage_title %}{{ sport.name }} facility{% endblock %}{% endblock %}
+
+{% block chrome %}
+<header class="{% if sport.slug == 'cricket' %}bg-teal-950 text-teal-50{% else %}bg-emerald-950 text-emerald-50{% endif %}">
+    <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-4">
+        <a href="{% url 'attendance:dashboard' %}" class="text-sm font-semibold tracking-wide">
+            {{ sport.name }} academy
+        </a>
+        <nav class="flex flex-wrap items-center gap-4 text-sm">
+            <span class="opacity-80">{{ manager.label }} · {{ manager.get_role_display }}</span>
+            <a href="{% url 'attendance:student_create' %}" class="hover:underline">Add student</a>
+            <form method="post" action="{% url 'attendance:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="hover:underline">Log out</button>
+            </form>
+        </nav>
+    </div>
+</header>
+{% endblock %}
